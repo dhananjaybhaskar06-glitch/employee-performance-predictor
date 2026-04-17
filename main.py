@@ -4,69 +4,88 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix
 
 # ---------------------------
-# 1. CREATE DATA
+# 1. CREATE REALISTIC HR DATA
 # ---------------------------
 np.random.seed(42)
 
+n = 300
+
 data = pd.DataFrame({
-    'Experience': np.random.randint(1, 20, 200),
-    'Salary': np.random.randint(20000, 100000, 200),
-    'Training_Hours': np.random.randint(10, 100, 200),
+    'Age': np.random.randint(22, 60, n),
+    'Experience': np.random.randint(1, 20, n),
+    'Salary': np.random.randint(20000, 150000, n),
+    'Training_Hours': np.random.randint(10, 100, n),
+    'Department': np.random.choice(['HR', 'IT', 'Sales', 'Finance'], n),
+    'Education': np.random.choice(['Bachelors', 'Masters', 'PhD'], n),
 })
 
-# Target
+# ---------------------------
+# 2. PERFORMANCE LOGIC
+# ---------------------------
 data['Performance'] = (
-    data['Experience'] * 0.3 +
-    data['Training_Hours'] * 0.2 +
-    data['Salary'] * 0.0001 > 15
+    (data['Experience'] * 0.3 +
+     data['Training_Hours'] * 0.2 +
+     data['Salary'] * 0.0001) > 18
 ).astype(int)
 
 # Save dataset
 data.to_csv("data/employees.csv", index=False)
 
 # ---------------------------
-# 2. SPLIT
+# 3. ENCODING
 # ---------------------------
-X = data[['Experience', 'Salary', 'Training_Hours']]
+le = LabelEncoder()
+data['Department'] = le.fit_transform(data['Department'])
+data['Education'] = le.fit_transform(data['Education'])
+
+# ---------------------------
+# 4. SPLIT
+# ---------------------------
+X = data.drop('Performance', axis=1)
 y = data['Performance']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 # ---------------------------
-# 3. MODEL
+# 5. MODEL
 # ---------------------------
 model = RandomForestClassifier()
 model.fit(X_train, y_train)
 
 # ---------------------------
-# 4. PREDICT
+# 6. PREDICT
 # ---------------------------
 y_pred = model.predict(X_test)
 
 # ---------------------------
-# 5. EVALUATION
+# 7. EVALUATION
 # ---------------------------
 accuracy = accuracy_score(y_test, y_pred)
 print("Accuracy:", accuracy)
 
 cm = confusion_matrix(y_test, y_pred)
 
-# Save confusion matrix
 sns.heatmap(cm, annot=True, fmt='d')
 plt.title("Confusion Matrix")
 plt.savefig("images/confusion_matrix.png")
 plt.clf()
 
 # ---------------------------
-# 6. VISUALIZATION
+# 8. MORE GRAPHS (IMPORTANT)
 # ---------------------------
-sns.scatterplot(x=data['Experience'], y=data['Salary'], hue=data['Performance'])
-plt.title("Experience vs Salary")
-plt.savefig("images/experience_vs_salary.png")
+sns.boxplot(x=data['Department'], y=data['Salary'])
+plt.title("Salary by Department")
+plt.savefig("images/salary_by_department.png")
 plt.clf()
 
-print("✅ Files saved in images/ and data/")
+sns.boxplot(x=data['Education'], y=data['Performance'])
+plt.title("Performance by Education")
+plt.savefig("images/performance_by_education.png")
+plt.clf()
+
+print("✅ Project upgraded successfully!")
